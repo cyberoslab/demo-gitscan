@@ -1,0 +1,44 @@
+name: scan-missconfig
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+env:
+  ORG: "krol"
+jobs:
+  scan-missconfig:
+    name: missconfiguration
+    runs-on: ubuntu-20.04
+    permissions:
+      security-events: write # https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: GitScan - misconfiguration artifacts
+        uses: aquasecurity/gitscan-action@master
+        with:
+          scan-type: 'config'
+          hide-progress: false
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: GitScan - misconfiguration artifacts - sarif.tpl
+        uses: aquasecurity/gitscan-action@master
+        with:
+          scan-type: 'config'
+          hide-progress: false
+          format: 'sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          output: 'gitscan-config.sarif'
+
+      - name: Upload GitScan scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@main
+        with:
+          sarif_file: 'gitscan-config.sarif'
